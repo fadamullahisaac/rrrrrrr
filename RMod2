@@ -1,0 +1,83 @@
+# install.packages("sf")
+# install.packages("dplyr")
+
+library(sf)
+
+# Set your working directory to the relevant folder
+setwd("C:/Users/USER/Desktop/Anita2023/speciesModeling/changesSingleSpecies/geoMountains")
+
+# Specify the path to the AOI shapefile
+aoiPath <- "data/conservancyArea"
+# Read the shapefile using the sf package
+conservancyArea <- st_read(aoiPath)
+# View the conservancy area data
+View(conservancyArea)
+# Check if it is a data frame
+is.data.frame(conservancyArea) # returns TRUE
+# Recreate the shx file to solve the issue when reading the shapefile & associated files
+Sys.setenv(SHAPE_RESTORE_SHX = "YES")
+# Specify the path to the species occurence shapefile
+speciesPath <- "data/Occurrence_data"
+# Read the shapefile using the sf package
+speciesInfo <- st_read(speciesPath)
+# View the species occurence information to check if there exists presence/absence data
+View(speciesInfo)
+# Check if it is a data frame
+is.data.frame(speciesInfo) #returns TRUE
+# Get the column names in the shapefile
+colnames(speciesInfo)
+# Select the specific species needed through data subsetting in the respective column name
+# 1. Get unique names from the 'Name' column
+      unique_names <- unique(speciesInfo$spp)
+# 2. Print the unique names (recall that R is case sensitive)
+      print(unique_names)
+# 3. Define the name of the species
+      targetSpecies <- "Acacia"
+# 4. Create a subset of the data based on the specified name
+      acaciaSpecies <- speciesInfo[speciesInfo$spp == targetSpecies, ]
+# 5. View the subset of data
+      View(acaciaSpecies)
+# 6. Save the subset to a new shapefile
+      #st_write(acaciaSpecies, "data/Occurrence_data/acacia.shp")
+# - Read the written shapefile using the sf package (or continue in R environment by calling opuntiaSpecies)
+   acaciaSpecies <- st_read("data/Occurrence_data/acacia.shp")
+   # (or continue in R environment by calling opuntiaSpecies)
+# View the species occurence information to check if there exists presence/absence data
+View(acaciaSpecies)
+# Check if it is a data frame
+is.data.frame(opuntiaSpecies) #returns TRUE
+# Get the column names in the shapefile
+colnames(opuntiaSpecies)
+#-------------------- RESTRUCTURING THE SHP FILE
+# Replace the 'spp' column with a constant value of 1
+opuntiaSpecies$Opuntia <- 1
+# Drop the 'spp' column
+opuntiaSpecies <- opuntiaSpecies[, !(names(opuntiaSpecies) %in% c("spp"))]
+   # Alternatively:
+   # library(dplyr)
+   # opuntiaSpecies <- opuntiaSpecies %>% select(-spp)
+# View the resulting data frame
+View(opuntiaSpecies)
+#-------------------- RESTRUCTURING THE EXPECTED CSV FILE
+# 1. Define the columns needed for occurrence data
+   occurrenceCols <- c("Long", "Lat", "Opuntia")  # Replace with your column names
+# 2. Select and keep only the specified relevant columns
+   occurrenceData <- opuntiaSpecies[, occurrenceCols]
+# 3. Preview the occurrence data
+   View (occurrenceData)
+# Define the path to the CSV file where you want to save the data
+rawCSVpath <- "data/opuntia_raw.csv"
+# Write the selected data to a CSV file
+write.csv(occurrenceData, file = rawCSVpath, row.names = FALSE)
+#-------------------- CLEANING THE CREATED CSV FILE
+# 1. Read the CSV file
+   rawData <- read.csv(rawCSVpath, row.names = NULL)
+# 2. Keep only the first three columns
+   opuntiaOcc <- rawData[, 1:3]
+# 3. View the selected data
+   View(opuntiaOcc)
+   
+# 3. Rename the column names in the csv file appropriately
+   colnames(opuntiaOcc) <-  occurrenceCols
+#-------------------- RE-WRITING THE CLEANED CSV FILE
+write.csv(data.frame(opuntiaOcc), file = "data/opuntia.csv", row.names = FALSE)
